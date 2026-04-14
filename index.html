@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦅 Орёл — Сезонная награда</title>
+<style>
+body {
+  font-family: monospace;
+  margin: 0;
+  padding: 10px;
+  background: #f4f6f8;
+}
+h2 {
+  text-align: center;
+  margin: 8px 0 5px;
+  font-size: 19px;
+}
+#date {
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: #555;
+}
+#search {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 12px;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+/* CARD */
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 11px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+  font-size: 12.8px;
+}
+
+/* Top Tiers */
+.top1  { border-left: 6px solid #d4af37; box-shadow: 0 0 12px rgba(212,175,55,0.28); }
+.top2  { border-left: 6px solid #b0b0b0; }
+.top3  { border-left: 6px solid #a97142; }
+.top4  { border-left: 6px solid #c9a227; box-shadow: 0 0 8px rgba(201,162,39,0.18); }
+.top5_10 { border-left: 6px solid #4a90e2; box-shadow: 0 0 8px rgba(74,144,226,0.20); }
+.top11_20 { border-left: 6px solid #4ade80; box-shadow: 0 0 10px rgba(74,222,128,0.30); }
+
+/* Badges */
+.rank-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: bold;
+  margin-left: 6px;
+}
+.rank1     { background: #d4af37; color: #000; }
+.rank2     { background: #b0b0b0; color: #000; }
+.rank3     { background: #a97142; color: #fff; }
+.rank4     { background: #c9a227; color: #000; }
+.rank5_10  { background: #4a90e2; color: #fff; font-size: 9.5px; }
+.rank11_20 { background: #4ade80; color: #1f3a2e; font-size: 9.5px; }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.label { color: #666; }
+.value { font-weight: bold; }
+
+.green { color: #1b8f3a; }
+.red   { color: #c62828; }
+.gold  { color: #b8860b; }
+</style>
+</head>
+<body>
+
+<h2>🦅 Орёл — Сезонная награда</h2>
+<div id="date"></div>
+<input type="text" id="search" placeholder="Поиск по ID или названию семьи...">
+<div id="cards"></div>
+
+<script>
+const sheetID = "1ZqicxQ458QCEFhvFi0skekdBSfegq0Qlm6uNEJn1tA8";
+const gid = "337717848"; // Лист "Eagle"
+const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?gid=${gid}&tq=SELECT%20*`;
+
+let rowsData = [];
+
+function v(r, i) {
+  return r.c && r.c[i] ? r.c[i].v : "";
+}
+
+function formatDate(val) {
+  if (!val) return "14.04.2026";
+  if (typeof val === "string" && val.includes("Date")) {
+    const match = val.match(/Date\((\d+),(\d+),(\d+)\)/);
+    if (match) {
+      const y = match[1];
+      const m = String(Number(match[2]) + 1).padStart(2, "0");
+      const d = String(match[3]).padStart(2, "0");
+      return `${d}.${m}.${y}`;
+    }
+  }
+  return String(val);
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(url + "&_=" + Date.now());
+    const text = await res.text();
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+    rowsData = json.table.rows || [];
+
+    if (rowsData.length) {
+      const updateDate = formatDate(v(rowsData[0], 0));
+      document.getElementById("date").innerText = `Данные обновлены: ${updateDate}`;
+    }
+
+    render(rowsData);
+  } catch (e) {
+    console.error("Ошибка загрузки", e);
+    document.getElementById("date").innerText = "Ошибка загрузки данных";
+  }
+}
+
+function render(rows) {
+  let html = "";
+  rows.forEach(r => {
+    const place       = Number(v(r, 1)) || 0;     // B - Место (для определения топа)
+    const familyName  = v(r, 2);                  // C - Семья (Название)
+    const familyId    = v(r, 0);                  // A - ID Семьи
+    const needPoints  = Number(v(r, 5)) || 0;     // F - Необходимо еще очков
+    const eagle       = v(r, 12);                 // M - Орел
+    const familyLiga  = v(r, 11);                 // L - Семейная Лига
+    const familyPK    = v(r, 10);                 // K - Семейный ПК
+
+    let rankClass = "";
+    let badge = "";
+    let crown = "";
+    let icon = "";
+
+    if (place === 1) {
+      rankClass = "top1";
+      badge = `<span class="rank-badge rank1">TOP 1</span>`;
+      crown = "👑 ";
+    } else if (place === 2) {
+      rankClass = "top2";
+      badge = `<span class="rank-badge rank2">TOP 2</span>`;
+    } else if (place === 3) {
+      rankClass = "top3";
+      badge = `<span class="rank-badge rank3">TOP 3</span>`;
+    } else if (place === 4) {
+      rankClass = "top4";
+      badge = `<span class="rank-badge rank4">TOP 4</span>`;
+    } else if (place >= 5 && place <= 10) {
+      rankClass = "top5_10";
+      badge = `<span class="rank-badge rank5_10">TOP 5-10</span>`;
+      icon = "🔵 ";
+    } else if (place >= 11 && place <= 20) {
+      rankClass = "top11_20";
+      badge = `<span class="rank-badge rank11_20">TOP 11-20</span>`;
+    }
+
+    const needPointsClass = needPoints > 0 ? "red" : "gold";
+
+    html += `
+    <div class="card ${rankClass}">
+      <div class="row">
+        <div><b>${crown}${icon}${familyName} ${badge}</b></div>
+      </div>
+      <div class="row">
+        <div class="label">ID семьи</div>
+        <div class="value">${familyId}</div>
+      </div>
+      <div class="row">
+        <div class="label">Орел</div>
+        <div class="value">${eagle || "—"}</div>
+      </div>
+      <div class="row">
+        <div class="label">Семейная Лига</div>
+        <div class="value">${familyLiga || "—"}</div>
+      </div>
+      <div class="row">
+        <div class="label">Семейный ПК</div>
+        <div class="value">${familyPK || "—"}</div>
+      </div>
+      <div class="row">
+        <div class="label">Необходимо еще очков</div>
+        <div class="value ${needPointsClass}">${needPoints.toLocaleString('ru-RU')}</div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById("cards").innerHTML = html || "<p style='text-align:center;color:#777;padding:20px;'>Нет данных</p>";
+}
+
+/* Поиск — теперь ищет по ID (Col A) и Семье (Col C) */
+document.getElementById("search").addEventListener("input", function() {
+  const val = this.value.toLowerCase().trim();
+  if (!val) {
+    render(rowsData);
+    return;
+  }
+  const filtered = rowsData.filter(r => {
+    const id   = String(v(r, 0)).toLowerCase();   // Column A - ID Семьи
+    const name = String(v(r, 2)).toLowerCase();   // Column C - Название Семьи
+    return id.includes(val) || name.includes(val);
+  });
+  render(filtered);
+});
+
+setInterval(loadData, 60000);
+loadData();
+</script>
+</body>
+</html>
