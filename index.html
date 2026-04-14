@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🦅 Орёл — Сезонная награда</title>
+<title>🦅 Орёл — Семейный Рейтинг</title>
 <style>
 body {
   font-family: monospace;
@@ -15,12 +15,6 @@ h2 {
   text-align: center;
   margin: 8px 0 5px;
   font-size: 19px;
-}
-#date {
-  text-align: center;
-  font-size: 12px;
-  margin-bottom: 12px;
-  color: #555;
 }
 #search {
   width: 100%;
@@ -81,8 +75,7 @@ h2 {
 </head>
 <body>
 
-<h2>🦅 Орёл — Сезонная награда</h2>
-<div id="date"></div>
+<h2>🦅 Орёл — Семейный Рейтинг</h2>
 <input type="text" id="search" placeholder="Поиск по ID или названию семьи...">
 <div id="cards"></div>
 
@@ -97,44 +90,23 @@ function v(r, i) {
   return r.c && r.c[i] ? r.c[i].v : "";
 }
 
-function formatDate(val) {
-  if (!val) return "14.04.2026";
-  if (typeof val === "string" && val.includes("Date")) {
-    const match = val.match(/Date\((\d+),(\d+),(\d+)\)/);
-    if (match) {
-      const y = match[1];
-      const m = String(Number(match[2]) + 1).padStart(2, "0");
-      const d = String(match[3]).padStart(2, "0");
-      return `${d}.${m}.${y}`;
-    }
-  }
-  return String(val);
-}
-
 async function loadData() {
   try {
     const res = await fetch(url + "&_=" + Date.now());
     const text = await res.text();
     const json = JSON.parse(text.substr(47).slice(0, -2));
     rowsData = json.table.rows || [];
-
-    if (rowsData.length) {
-      const updateDate = formatDate(v(rowsData[0], 0));
-      document.getElementById("date").innerText = `Данные обновлены: ${updateDate}`;
-    }
-
     render(rowsData);
   } catch (e) {
     console.error("Ошибка загрузки", e);
-    document.getElementById("date").innerText = "Ошибка загрузки данных";
   }
 }
 
 function render(rows) {
   let html = "";
   rows.forEach(r => {
-    const place       = Number(v(r, 1)) || 0;     // B - Место (для определения топа)
-    const familyName  = v(r, 2);                  // C - Семья (Название)
+    const place       = Number(v(r, 1)) || 0;     // B - Место (для топов)
+    const familyName  = v(r, 2);                  // C - Семья
     const familyId    = v(r, 0);                  // A - ID Семьи
     const needPoints  = Number(v(r, 5)) || 0;     // F - Необходимо еще очков
     const eagle       = v(r, 12);                 // M - Орел
@@ -201,7 +173,7 @@ function render(rows) {
   document.getElementById("cards").innerHTML = html || "<p style='text-align:center;color:#777;padding:20px;'>Нет данных</p>";
 }
 
-/* Поиск — теперь ищет по ID (Col A) и Семье (Col C) */
+/* Поиск */
 document.getElementById("search").addEventListener("input", function() {
   const val = this.value.toLowerCase().trim();
   if (!val) {
@@ -209,8 +181,8 @@ document.getElementById("search").addEventListener("input", function() {
     return;
   }
   const filtered = rowsData.filter(r => {
-    const id   = String(v(r, 0)).toLowerCase();   // Column A - ID Семьи
-    const name = String(v(r, 2)).toLowerCase();   // Column C - Название Семьи
+    const id   = String(v(r, 0)).toLowerCase();   // Column A
+    const name = String(v(r, 2)).toLowerCase();   // Column C
     return id.includes(val) || name.includes(val);
   });
   render(filtered);
